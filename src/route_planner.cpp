@@ -10,10 +10,8 @@ RoutePlanner::RoutePlanner(RouteModel &model, float start_x, float start_y, floa
 
     // TODO 2: Use the m_Model.FindClosestNode method to find the closest nodes to the starting and ending coordinates.
     // Store the nodes you find in the RoutePlanner's start_node and end_node attributes.
-    std::cout << "Before setting start and end nodes\n";
-	  *start_node = m_Model.FindClosestNode(start_x, start_y);
-    *end_node = m_Model.FindClosestNode(end_x, end_y);
-    std::cout << "After setting start and end nodes\n";
+	start_node = &m_Model.FindClosestNode(start_x, start_y);
+	end_node = &m_Model.FindClosestNode(end_x, end_y);
 }
 
 
@@ -37,14 +35,18 @@ float RoutePlanner::CalculateHValue(RouteModel::Node const *node) {
 void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
 	current_node->FindNeighbors();
 	// Iterate over current_node.neighbors
-  	for (int i = 0; i < current_node->neighbors.size(); i = i+1)
+	for (int i = 0; i < current_node->neighbors.size(); i = i+1)
     {
-  	  // Set parent (needs pointer to current_node)
-      current_node->neighbors[i]->parent = current_node;
-  	  // Set h_value using CalculateHValue
-      current_node->neighbors[i]->h_value = CalculateHValue(current_node->neighbors[i]);
-  	  // Set g_value
-  		// Add node to open_list, setting 'visited' attribute to true
+		// Set parent (needs pointer to current_node)
+		current_node->neighbors[i]->parent = current_node;
+		// Set h_value using CalculateHValue
+		current_node->neighbors[i]->h_value = CalculateHValue(current_node->neighbors[i]);
+		// Set g_value --> LOOK UP HOW TO CALCULATE THIS!!!!!!!!!!!!
+		current_node->neighbors[i]->g_value = current_node->g_value + current_node->distance(*current_node->neighbors[i]);
+		// Set visited to true
+		current_node->neighbors[i]->visited = true;
+    	// Add to open list
+    	open_list.push_back(current_node->neighbors[i]);
     };
 }
 
@@ -55,9 +57,17 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
 // - Create a pointer to the node in the list with the lowest sum.
 // - Remove that node from the open_list.
 // - Return the pointer.
+bool Compare(RouteModel::Node a, RouteModel::Node b) {
+  float f1 = a.g_value + a.h_value;
+  float f2 = b.g_value + b.h_value;
+  return f2 > f1;
+}
 
 RouteModel::Node *RoutePlanner::NextNode() {
-
+	std::sort(open_list.begin(), open_list.end(), Compare());
+    RouteModel::Node *point = open_list[0];
+    open_list.erase(open_list.begin());
+    return point;
 }
 
 
@@ -72,7 +82,7 @@ RouteModel::Node *RoutePlanner::NextNode() {
 std::vector<RouteModel::Node> RoutePlanner::ConstructFinalPath(RouteModel::Node *current_node) {
     // Create path_found vector
     distance = 0.0f;
-    std::vector<RouteModel::Node> path_found;
+    std::vector<RouteModel::Node> path_found; // path_found is the vector name
 
     // TODO: Implement your solution here.
 
